@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { EsgData } from "@/lib/types";
 import EsgForm from "@/components/EsgForm";
+import DataSummary from "@/components/DataSummary";
 
 // Dynamic imports to avoid SSR issues with Recharts/html2pdf
 const EmissionsChart = dynamic(() => import("@/components/EmissionsChart"), {
@@ -17,6 +18,7 @@ const ReportPreview = dynamic(() => import("@/components/ReportPreview"), {
 export default function Home() {
   const [data, setData] = useState<EsgData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     fetch("/api/esg")
@@ -41,7 +43,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+    <main className={`mx-auto space-y-6 px-4 pt-20 pb-8 ${showResults ? "max-w-5xl" : "max-w-3xl"}`}>
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">
           ESG Report Pipeline
@@ -52,13 +54,31 @@ export default function Home() {
         </p>
       </div>
 
-      <EsgForm initialData={data} onSave={handleSave} />
-
-      {data && (
+      {!showResults ? (
+        <EsgForm
+          initialData={data}
+          onSave={handleSave}
+          onViewResults={() => setShowResults(true)}
+          hasData={!!data}
+        />
+      ) : (
         <>
-          <EmissionsChart data={data} />
-          <StrategyPanel data={data} onUpdate={setData} />
-          <ReportPreview data={data} />
+          <button
+            onClick={() => setShowResults(false)}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back to Form
+          </button>
+          {data && (
+            <>
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.5fr]">
+                <DataSummary data={data} />
+                <EmissionsChart data={data} />
+              </div>
+              <StrategyPanel data={data} onUpdate={setData} />
+              <ReportPreview data={data} />
+            </>
+          )}
         </>
       )}
     </main>

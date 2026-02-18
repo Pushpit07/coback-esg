@@ -4,14 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { EsgData } from "@/lib/types";
+
+const YEARS = Array.from({ length: 11 }, (_, i) => 2020 + i);
 
 interface Props {
   initialData: EsgData | null;
   onSave: (data: EsgData) => void;
+  onViewResults: () => void;
+  hasData: boolean;
 }
 
-export default function EsgForm({ initialData, onSave }: Props) {
+export default function EsgForm({ initialData, onSave, onViewResults, hasData }: Props) {
   const [companyName, setCompanyName] = useState("");
   const [reportingYear, setReportingYear] = useState<number | "">(2024);
   const [scope1, setScope1] = useState<number | "">("");
@@ -125,20 +136,25 @@ export default function EsgForm({ initialData, onSave }: Props) {
 
           {/* Reporting Year */}
           <div className="space-y-2">
-            <Label htmlFor="reportingYear">
+            <Label>
               Reporting Year <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="reportingYear"
-              type="number"
-              value={reportingYear}
-              onChange={(e) =>
-                setReportingYear(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              placeholder="e.g. 2024"
-              min={2000}
-              max={2030}
-            />
+            <Select
+              key={reportingYear === "" ? "empty" : String(reportingYear)}
+              value={reportingYear === "" ? undefined : String(reportingYear)}
+              onValueChange={(val) => setReportingYear(Number(val))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-40">
+                {YEARS.map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.reportingYear && (
               <p className="text-sm text-destructive">{errors.reportingYear}</p>
             )}
@@ -240,14 +256,21 @@ export default function EsgForm({ initialData, onSave }: Props) {
           </div>
 
           {/* Submit */}
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Data"}
-            </Button>
-            {saveSuccess && (
-              <span className="text-sm font-medium" style={{ color: "#02F789" }}>
-                Data saved successfully!
-              </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save Data"}
+              </Button>
+              {saveSuccess && (
+                <span className="text-sm font-medium" style={{ color: "#02F789" }}>
+                  Data saved successfully!
+                </span>
+              )}
+            </div>
+            {hasData && (
+              <Button type="button" variant="outline" onClick={onViewResults}>
+                View Results ›
+              </Button>
             )}
           </div>
         </form>

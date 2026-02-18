@@ -54,13 +54,34 @@ function generateMockStrategies(req: StrategyRequest): StrategyResponse {
   };
 }
 
+function stringifyValue(val: unknown): string {
+  if (typeof val === "string") return val;
+  if (typeof val === "object" && val !== null) {
+    return JSON.stringify(val, null, 2);
+  }
+  return String(val);
+}
+
+function extractStrategies(parsed: Record<string, unknown>): string[] | null {
+  // Direct match
+  if (Array.isArray(parsed.strategies) && parsed.strategies.length === 3) {
+    return parsed.strategies.map(stringifyValue);
+  }
+  // Find the first array with 3 items
+  for (const val of Object.values(parsed)) {
+    if (Array.isArray(val) && val.length === 3) {
+      return val.map(stringifyValue);
+    }
+  }
+  return null;
+}
+
 export async function generateStrategies(
   req: StrategyRequest
 ): Promise<StrategyResponse> {
   // Try OpenAI if API key is available
   if (process.env.OPENAI_API_KEY) {
     try {
-      // @ts-expect-error - openai is an optional dependency
       const { default: OpenAI } = await import("openai");
       const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -70,12 +91,13 @@ export async function generateStrategies(
 ${req.scope3_tco2e ? `- Scope 3: ${req.scope3_tco2e} tCO2e` : ""}
 ${req.energy_consumption_kwh ? `- Energy Consumption: ${req.energy_consumption_kwh} kWh` : ""}
 
-Generate exactly 3 decarbonization strategy variants. Each MUST reference the specific numbers provided above.
+Generate exactly 3 decarbonization strategy variants as plain text strings. Each MUST reference the specific numbers provided above.
 1. SHORT: 2-4 sentences, executive summary style
 2. NEUTRAL: 5-8 sentences, balanced analysis with specific recommendations
 3. DETAILED: Multi-section with bullet points, specific measures and targets
 
-Return as JSON: { "strategies": ["short text", "neutral text", "detailed text"] }`;
+IMPORTANT: Each strategy must be a single plain text string, NOT a nested object.
+Return ONLY this exact JSON structure: { "strategies": ["short text string", "neutral text string", "detailed text string"] }`;
 
       const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
@@ -88,8 +110,9 @@ Return as JSON: { "strategies": ["short text", "neutral text", "detailed text"] 
       const parsed = JSON.parse(
         completion.choices[0].message.content || "{}"
       );
-      if (parsed.strategies && parsed.strategies.length === 3) {
-        return { strategies: parsed.strategies as [string, string, string] };
+      const strategies = extractStrategies(parsed);
+      if (strategies) {
+        return { strategies: strategies as [string, string, string] };
       }
     } catch (err) {
       console.warn("OpenAI call failed, falling back to mock:", err);

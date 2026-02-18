@@ -1,5 +1,7 @@
 # Mini ESG Report Pipeline
 
+**Live Demo**: https://coback-esg.vercel.app/
+
 A simplified end-to-end ESG reporting feature with data entry, persistent storage, visualization, AI strategy generation, and PDF report download.
 
 ## Tech Stack

@@ -39,8 +39,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       scope3_tco2e: body.scope3_tco2e ?? undefined,
       energy_consumption_kwh: body.energy_consumption_kwh ?? undefined,
       notes: body.notes ?? undefined,
-      strategies: existing?.strategies,
-      selected_strategy_index: existing?.selected_strategy_index,
+      strategies: undefined,
+      selected_strategy_index: undefined,
       updated_at: new Date().toISOString(),
     };
 
